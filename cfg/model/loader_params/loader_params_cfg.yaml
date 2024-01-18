@@ -1,0 +1,5 @@
+batch_size: 512
+# /num_workers: 16 #4
+# /persistent_workers: True
+# /pin_memory: True
+dtypes: float32
