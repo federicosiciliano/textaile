@@ -169,6 +169,7 @@ data/*
 
 # Output
 out/model/*
+out/img/*
 *.pth
 
 # Docs
