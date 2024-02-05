@@ -12,9 +12,6 @@ decoder:
 
 embedding_size: 512
 
-palette_size: 5
-num_colors: 216
-
 optimizer:
   name: Adam
   params:

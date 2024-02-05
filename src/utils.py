@@ -88,6 +88,11 @@ class TextAIle(torch.nn.Module):
         new_out = {"other_concepts": torch.sigmoid(other_concepts), "other_embedding": out["embedding"], "new_concepts": out["concepts"]}
 
         return new_out
+    
+# Concept-based AutoEncoder
+class CustomTextAIle(torch.nn.Module):
+    def __init__(self, n_channels, concept_size, embedding_size, num_neurons = 64, num_layers = 4, input_size = 64, disentangle=False, **kwargs):
+        super().__init__()
 
     # def concept_func(self, x):
     #     hues = torch.sigmoid(x[:,[0,3,6,9,12]])

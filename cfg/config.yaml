@@ -1,14 +1,14 @@
 
 data:
     #name: [VA_textiles_padded_inner,color_palette_va_inner.csv]
-    name: [MET_textiles_padded_inner_quarter,color_palette_met_inner.csv]
+    name: [MET_textiles_padded_inner,color_palette_met_inner.csv]
     source: local #uci #tfds #custom #path_to_local_file
     local_key: ["x","y"]
     /loader_params:
       # VA_textiles_padded_inner: {}
       # color_palette_va_inner.csv:
       #   delimiter: ","
-      MET_textiles_padded_inner_quarter: {}
+      MET_textiles_padded_inner: {}
       color_palette_met_inner.csv:
         delimiter: ","
         load_using_pandas: True
