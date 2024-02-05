@@ -168,7 +168,7 @@ cython_debug/
 data/*
 
 # Output
-out/model/*
+out/models/*
 out/img/*
 *.pth
 
