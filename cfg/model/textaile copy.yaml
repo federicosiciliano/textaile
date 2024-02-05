@@ -1,0 +1,194 @@
+
+# encoder:
+#   name: resnet34 #efficientnet_v2_s #vgg16 #resnet18 #resnet34
+#   torchvision_params:
+#     # weights: null
+#     weights: DEFAULT
+
+# decoder:
+#   name: resnet34 #vgg16 #resnet18 #resnet34
+#   # torchvision_params:
+#   #   # weights: null
+#   #   weights: DEFAULT
+
+embedding_size: 512
+
+#output_size: 1
+
+optimizer:
+  name: Adam
+  params:
+    # lr: 1.0e-1 # 0.2
+    weight_decay: 1.0e-3
+
+# loss:
+#   EncDecLoss:
+#     name: LossWithNans
+#     params:
+#       loss: L1Loss
+#   ConceptLoss:
+#     name: LossWithNans
+#     params:
+#       loss: L1Loss
+
+loss:
+  # Define multi_loss weights
+  # __weight__ : [0.6, 0.3, 0.1] #[0.1, 0.001, 0.001, 0.898]
+  # __weight__ : [0.6, 0.3, 0.1]
+    # - [0.6, 0.3, 0.1]
+    # - [0.8, 0.1, 0.1]
+    # - [0.65, 0.3, 0.05]
+    # - [0.5, 0.35, 0.15]
+    # - [0.5, 0.2, 0.3]
+    # - [0.34, 0.33, 0.33]
+    # - [0.3, 0.2, 0.5]
+    # - [0.1, 0.2, 0.7]
+  # ConceptLoss, DisentagleConcepts, DisentagleEmbedding, EncDecLoss
+  EncDecLoss:
+    name: L1Loss #BCELoss #L1Loss #MSELoss #VGGPerceptualLoss
+  # ConceptLoss:
+  #   name: TextAIleCustomConceptLoss
+  #   params:
+  #     separate_losses:
+  #       hues:
+  #         - [0,3,6,9,12]
+  #         - angular_loss:
+  #           name: LossWithNans
+  #           params:
+  #             loss: AngularL1Loss #AngularMSELoss #AngularL1Loss
+  #       saturation_and_value:
+  #         - [1,4,7,10,13,2,5,8,11,14]
+  #         - saturation_loss:
+  #           name: LossWithNans
+  #           params:
+  #             loss: MSELoss #BCELoss #L1Loss #MSELoss
+  #             loss_params:
+  #               reduction: none
+  #       harmonies:
+  #         - [15,16,17,18,19,20]
+  #         - bce_loss:
+  #           name: LossWithNans
+  #           params:
+  #             loss: MSELoss #BCEWithLogitsLoss #BCELoss #L1Loss #MSELoss
+  #             loss_params:
+  #               reduction: none
+  ConceptLoss:
+    name: TextAIleCustomConceptLoss
+    params:
+      separate_losses:
+        hues:
+          - [0,3,6,9,12]
+          - angular_loss:
+            name: LossWithNans
+            loss_params:
+              loss: PermutedLoss
+              loss_params:
+                loss: AngularL1Loss #AngularMSELoss #AngularL1Loss
+        saturation:
+          - [1,4,7,10,13]
+          - saturation_loss:
+            name: LossWithNans
+            loss_params:
+              loss: PermutedLoss
+              loss_params:
+                loss: MSELoss
+                loss_params:
+                  reduction: none
+        value:
+          - [2,5,8,11,14]
+          - saturation_loss:
+            name: LossWithNans
+            loss_params:
+              loss: PermutedLoss
+              loss_params:
+                loss: MSELoss
+                loss_params:
+                  reduction: none
+        harmonies:
+          - [15,16,17,18,19,20]
+          - bce_loss:
+            name: LossWithNans
+            loss_params:
+              loss: MSELoss
+  # VAELoss:
+  #   name: NormalizedKL_DivergenceLoss
+  # DisentagleEmbedding:
+  #   name: MSELoss
+  # DisentagleConcepts:
+  #   name: TextAIleCustomConceptLoss
+  #   params:
+  #     separate_losses:
+  #       hues:
+  #         - [0,3,6,9,12]
+  #         - angular_loss:
+  #           name: LossWithNans
+  #           loss_params:
+  #             loss: PermutedLoss
+  #             loss_params:
+  #               loss: AngularL1Loss #AngularMSELoss #AngularL1Loss
+  #       saturation:
+  #         - [1,4,7,10,13]
+  #         - saturation_loss:
+  #           name: LossWithNans
+  #           loss_params:
+  #             loss: PermutedLoss
+  #             loss_params:
+  #               loss: MSELoss
+  #               loss_params:
+  #                 reduction: none
+  #       value:
+  #         - [2,5,8,11,14]
+  #         - saturation_loss:
+  #           name: LossWithNans
+  #           loss_params:
+  #             loss: PermutedLoss
+  #             loss_params:
+  #               loss: MSELoss
+  #               loss_params:
+  #                 reduction: none
+  #       harmonies:
+  #         - [15,16,17,18,19,20]
+  #         - bce_loss:
+  #           name: LossWithNans
+  #           loss_params:
+  #             loss: MSELoss
+# metrics:
+#   - SoftLabelsAccuracy
+
+/log_params:
+  on_step: False
+  on_epoch: True
+
+#seed: ${exp.seed}
+
+#vae: False
+disentangle: True
+
+step_routing:
+  model_input_from_batch: 0
+  loss_input_from_batch:
+    EncDecLoss:
+      target: 0
+    ConceptLoss:
+      target: 1
+    # DisentagleEmbedding: {}
+    # DisentagleConcepts: {}
+    # VAELoss: {}
+  loss_input_from_model_output:
+    EncDecLoss:
+      input: reconstructed_img
+    ConceptLoss:
+      input: concepts
+    # DisentagleEmbedding:
+    #   input: new_embedding
+    #   target: embedding
+    # DisentagleConcepts:
+    #   input: new_concepts
+    #   target: other_concepts
+    # VAELoss:
+    #   mu: mu
+    #   sigma: sigma
+
++loader_params: loader_params_cfg
+
++trainer_params: trainer_params_cfg

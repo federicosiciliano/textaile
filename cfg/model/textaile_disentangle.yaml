@@ -1,0 +1,80 @@
+encoder:
+  name: resnet34 #efficientnet_v2_s #vgg16 #resnet18 #resnet34
+  torchvision_params:
+    # weights: null
+    weights: DEFAULT
+
+decoder:
+  name: resnet34 #efficientnet_v2_s #vgg16 #resnet18 #resnet34
+  torchvision_params:
+    # weights: null
+    weights: DEFAULT
+
+embedding_size: 512
+
+palette_size: 5
+num_colors: 216
+
+optimizer:
+  name: Adam
+  params:
+    lr: 1.0e-4 # 0.2
+    # weight_decay: 1.0e-3
+  # name: RMSprop
+  # params:
+  #   lr: 1.0e-2
+  #   weight_decay: 1.0e-3
+  #   momentum: 0.9
+
+loss:
+  # Define multi_loss weights
+  __weight__ : [0.2, 0.05, 0.05, 0.7] # ConceptLoss, DisentagleConcepts, DisentagleEmbedding, EncDecLoss #comment if disentangle False
+  ConceptLoss:
+    name: WeightedLoss
+    params:
+      loss: BCEWithLogitsLoss
+      loss_params:
+        reduction: none
+  DisentagleEmbedding:
+    name: L1Loss
+  DisentagleConcepts:
+    name: BCEWithLogitsLoss
+  EncDecLoss:
+    name: WeightedLoss
+    params:
+      loss: L1Loss #BCELoss #L1Loss #MSELoss #VGGPerceptualLoss
+      loss_params:
+        reduction: none
+
+/log_params:
+  on_step: False
+  on_epoch: True
+
+disentangle: True
+
+step_routing:
+  model_input_from_batch: 0
+  loss_input_from_batch:
+    EncDecLoss:
+      target: 0
+      weight: 2
+    ConceptLoss:
+      target: 1
+      weight: 2
+    DisentagleConcepts: {}
+    DisentagleEmbedding: {}
+  loss_input_from_model_output:
+    EncDecLoss:
+      input: reconstructed_img
+    ConceptLoss:
+      input: concepts
+    DisentagleConcepts:
+      input: concepts
+      target: other_concepts
+    DisentagleEmbedding:
+      input: embedding
+      target: other_embedding
+
++loader_params: loader_params_cfg
+
++trainer_params: trainer_params_cfg

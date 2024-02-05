@@ -1,8 +1,8 @@
 /accelerator: auto
 /enable_checkpointing: True
 max_epochs: 1000
-# gradient_clip_val: 1
-# gradient_clip_algorithm: value
+gradient_clip_val: 1
+gradient_clip_algorithm: value
 callbacks:
     # - EarlyStopping:
     #     monitor: val_loss #val_loss/dataloader_idx_0 when using multiple dataloaders
