@@ -1,0 +1,65 @@
+encoder:
+  name: resnet34 #efficientnet_v2_s #vgg16 #resnet18 #resnet34
+  torchvision_params:
+    # weights: null
+    weights: DEFAULT
+
+decoder:
+  name: resnet34 #efficientnet_v2_s #vgg16 #resnet18 #resnet34
+  torchvision_params:
+    # weights: null
+    weights: DEFAULT
+
+embedding_size: 5000
+
+optimizer:
+  name: Adam
+  params:
+    lr: 1.0e-4 # 0.2
+    # weight_decay: 1.0e-3
+  # name: RMSprop
+  # params:
+  #   lr: 1.0e-2
+  #   weight_decay: 1.0e-3
+  #   momentum: 0.9
+
+loss:
+  # Define multi_loss weights
+  __weight__ : [0.1, 0.9] # ConceptLoss, EncDecLoss #comment if disentangle True
+  ConceptLoss:
+    name: WeightedLoss
+    params:
+      loss: BCEWithLogitsLoss
+      loss_params:
+        reduction: none
+  EncDecLoss:
+    name: WeightedLoss
+    params:
+      loss: MS_SSIM_Loss #L1Loss #BCELoss #L1Loss #MSELoss #VGGPerceptualLoss
+      loss_params:
+        reduction: none
+
+/log_params:
+  on_step: False
+  on_epoch: True
+
+disentangle: False
+
+step_routing:
+  model_input_from_batch: 0
+  loss_input_from_batch:
+    EncDecLoss:
+      target: 0
+      weight: 2
+    ConceptLoss:
+      target: 1
+      weight: 2
+  loss_input_from_model_output:
+    EncDecLoss:
+      input: reconstructed_img
+    ConceptLoss:
+      input: concepts
+
++loader_params: loader_params_cfg
+
++trainer_params: trainer_params_cfg
