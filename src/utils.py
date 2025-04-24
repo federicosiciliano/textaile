@@ -111,21 +111,18 @@ class CustomTextAIle(torch.nn.Module):
 
 # Concept-based AutoEncoder
 class TextAIleBottleneck(torch.nn.Module):
-    def __init__(self, encoder, decoder, concept_size, embedding_size, num_colors = 216, palette_size = 5, **kwargs):
+    def __init__(self, encoder, decoder, concept_size, embedding_size, num_colors = 216, **kwargs):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.concept_size = concept_size
         self.embedding_size = embedding_size
-        self.palette_size = palette_size
         self.num_colors = num_colors
 
         concept_embs = []
         for i in range(concept_size):
-            if i < palette_size:
-                concept_embs.append(torch.nn.Embedding(num_colors, embedding_size))
-            else:
-                concept_embs.append(torch.nn.Embedding(2, embedding_size))
+            concept_embs.append(torch.nn.Embedding(2, embedding_size))
+            # if ...
         self.concept_embs = torch.nn.ModuleList(concept_embs)
 
         self.recon_func = torch.nn.Sigmoid()
@@ -142,20 +139,30 @@ class TextAIleBottleneck(torch.nn.Module):
         enc = self.encoder(x) #self.encoder_mlp(self.encoder(x))
         concepts = enc[:, :-self.embedding_size]
 
-        colors = concepts[:,:int(self.palette_size*self.num_colors)].reshape(-1, self.palette_size, self.num_colors)
-        colors = torch.softmax(colors, dim=-1)
+        colors = concepts[:,:self.num_colors]
+        color_prob = torch.softmax(colors, dim=-1)
 
-
-        # Multiply embeddings by color weights
+        other_concepts_prob = torch.sigmoid(concepts[:,self.num_colors:])
+        concept_prob = torch.cat([color_prob, other_concepts_prob], dim=-1)
+        # Forse anche qui softmax su alcuni
+        
         concept_embeddings = []
-        for color_id in range(self.palette_size):
-            concept_embeddings.append((self.concept_embs[color_id].weight * colors[:,color_id][:,None]).sum())
+        # Si potrebbe ottimizzare --> embedding as matrix (num_concepts, 2, emb_size)
+        for i,c_prob in enumerate(concept_prob):
+            concept_embeddings.append(c_prob*self.concept_embs[i].weight[:,0] + (1-c_prob)*self.concept_embs[i].weight[:,1])
 
-        binary_concepts = torch.sigmoid(concepts[int(self.palette_size*self.num_colors):])
-        for i in range(self.concept_size):
-            if i > self.palette_size:
-                print(torch.cat([binary_concepts[:,i][:,None],1-binary_concepts[:,i][:,None]], dim=-1).shape)
-                concept_embeddings.append(self.concept_embs[i].weight * torch.cat([binary_concepts[:,i][:,None],1-binary_concepts[:,i][:,None]], dim=-1))
+        print(concept_embeddings.shape)
+
+        # # Multiply embeddings by color weights
+        # concept_embeddings = []
+        # for color_id in range(self.palette_size):
+        #     concept_embeddings.append((self.concept_embs[color_id].weight * colors[:,color_id][:,None]).sum())
+
+        # binary_concepts = torch.sigmoid(concepts[int(self.palette_size*self.num_colors):])
+        # for i in range(self.concept_size):
+        #     if i > self.palette_size:
+        #         print(torch.cat([binary_concepts[:,i][:,None],1-binary_concepts[:,i][:,None]], dim=-1).shape)
+        #         concept_embeddings.append(self.concept_embs[i].weight * torch.cat([binary_concepts[:,i][:,None],1-binary_concepts[:,i][:,None]], dim=-1))
 
         embedding = enc[:, -self.embedding_size:]
         return {"concepts": concepts, "embedding": embedding, "concept_embeddings": concept_embeddings}
@@ -172,7 +179,9 @@ class Orthogonality_Loss(torch.nn.Module):
         # cosine similarity loss betweem concept embeddings and embedding
         loss = 0
         for concept_embedding in concepts_embeddings:
-            loss += torch.nn.functional.cosine_similarity(embedding, concept_embedding, dim=-1)
+            app = torch.nn.functional.cosine_similarity(embedding, concept_embedding, dim=-1)
+            print(app.shape)
+            loss += app
         return loss.mean()
 
 # Concept-based AutoEncoder
